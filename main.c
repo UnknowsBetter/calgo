@@ -8,18 +8,41 @@ typedef struct tagInteger
 {
 	UINT uiValue;
 	HLIST_NODE_T stListNode;
-} INTEGER_T;
+} UINTEGER_T;
 
+#define SIZEOF_UINTEGER_T sizeof(UINTEGER_T)
+#define UINTEGER_T_CONTAINEROF(pstListNode) ContainerOf(pstListNode, UINTEGER_T, stListNode)
 
-ULONG hash_HashIntegerT(VOID *pKey)
+STATIC UINTEGER_T * integer_Create(UINT uiValue)
+{
+	UINTEGER_T * pstInteger = NULL;
+
+	pstInteger = malloc(SIZEOF_UINTEGER_T);
+	if (pstInteger)
+	{
+		memset(pstInteger, 0, sizeof(UINTEGER_T));
+		pstInteger->uiValue = uiValue;
+	}
+	return pstInteger;
+}
+
+STATIC VOID integer_Destroy(UINTEGER_T * pstInteger)
+{
+	if (pstInteger)
+	{
+		free(pstInteger);
+	}
+}
+
+STATIC ULONG hash_HashIntegerT(VOID *pKey)
 {
 	return rhash_HashInt32(pKey, 0);
 }
 
-ULONG hash_CompareIntegerT (HLIST_NODE_T *a, VOID *pKey)
+STATIC ULONG hash_CompareIntegerT (HLIST_NODE_T *a, VOID *pKey)
 {
-	INTEGER_T *pstInteger = NULL;
-	pstInteger = ContainerOf(a, INTEGER_T, stListNode);
+	UINTEGER_T *pstInteger = NULL;
+	pstInteger = ContainerOf(a, UINTEGER_T, stListNode);
 	return pstInteger->uiValue - *(UINT*)pKey;
 }
 
@@ -27,8 +50,9 @@ int main(int argc, char* argv[])
 {
 
 	HASH_TABLE_T stHashTable;
-	INTEGER_T    astIntegers[200];
+	UINTEGER_T    astIntegers[200];
 	UINT uiKey = 0;
+	UINT uiCounter = 1;
 
 	hash_InitTable(&stHashTable, hash_HashIntegerT, hash_CompareIntegerT, 20);
 
@@ -38,13 +62,16 @@ int main(int argc, char* argv[])
 		hash_AddNode(&stHashTable, &astIntegers[i].uiValue, &astIntegers[i].stListNode);	
 	}
 	
-	HLIST_NODE_T *pstNode = hash_FindNode(&stHashTable, &uiKey);
-	INTEGER_T *pstInteger = ContainerOf(pstNode, INTEGER_T, stListNode);
 
-	assert_runtime(pstInteger == astIntegers + uiKey);
+	hash_Walk((&stHashTable))
+	{
+		UINTEGER_T* pstIteger = UINTEGER_T_CONTAINEROF(iter);
+
+		printf("%03llu, %p: %-3u%s", ulBktIdx, iter, pstIteger->uiValue,
+			   (uiCounter++%4 == 0) ? "\n" : ",    \t");
+	}
 
 	hash_FiniTable(&stHashTable);
-
 	return 0;
 }
 
@@ -83,22 +110,22 @@ void test_rlist()
 	hlist_AddNode(&stList, &stNode3);
  
 	/* check the insertion results */
-	assert_runtime(stList.pstFirst == &stNode3);
-	assert_runtime(stNode3.pstNext == &stNode2);
-	assert_runtime(stNode2.pstNext == &stNode1);
-	assert_runtime(stNode1.pstNext == NULL);
+	AssertRuntime(stList.pstFirst == &stNode3);
+	AssertRuntime(stNode3.pstNext == &stNode2);
+	AssertRuntime(stNode2.pstNext == &stNode1);
+	AssertRuntime(stNode1.pstNext == NULL);
 
-	assert_runtime(stNode1.ppstPrevious == (HLIST_NODE_T**)&stNode2);
-	assert_runtime(stNode2.ppstPrevious == (HLIST_NODE_T**)&stNode3);
-	assert_runtime(stNode3.ppstPrevious == (HLIST_NODE_T**)&(stList.pstFirst));
+	AssertRuntime(stNode1.ppstPrevious == (HLIST_NODE_T**)&stNode2);
+	AssertRuntime(stNode2.ppstPrevious == (HLIST_NODE_T**)&stNode3);
+	AssertRuntime(stNode3.ppstPrevious == (HLIST_NODE_T**)&(stList.pstFirst));
 
 	hlist_RemoveNode(&stNode1);
-	assert_runtime(stNode2.pstNext == NULL);
+	AssertRuntime(stNode2.pstNext == NULL);
 
 	hlist_RemoveNode(&stNode2);
 	hlist_RemoveNode(&stNode3);
 
-	assert_runtime(stList.pstFirst == NULL);
+	AssertRuntime(stList.pstFirst == NULL);
 
 	rlist_foreach((&stList))
  	{

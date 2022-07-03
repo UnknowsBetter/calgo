@@ -11,7 +11,7 @@
 #include <stdio.h>
 #endif
 #define dbg_output_file (1)
-#define assert_runtime(expr) 		\
+#define AssertRuntime(expr) 		\
 	do {			\
 		if (!(expr)) {	\
 			char buffer[1024] = {0};								\
@@ -304,19 +304,10 @@ STATIC HLIST_NODE_T* hash_RemoveNode(HASH_TABLE_T *pstTable, void *pKey)
 	return pstNode;
 }
 
-typedef struct taghHashTable
-{
-	HLIST_HEAD_T    *pstBuckets;
-	ULONG		  	ulBucketSize;
-	HASH_FUNC_PF    pfHash;
-	HASH_COMPARE_PF pfCompare;
-}HASH_TABLE_T;
-
-
 #define hash_Walk(pstTable) \
 	for (ULONG ulBktIdx = 0; ulBktIdx < pstTable->ulBucketSize; ulBktIdx++) \
-	for (HLIST_NODE_T *pstNode = pstTable->pstBuckets[ulBktIdx]->pstFirst; \
-		pstFirst != NULL; \
-		pstFirst = pstFirst->pstNext ) \
+	for (HLIST_NODE_T *iter = pstTable->pstBuckets[ulBktIdx].pstFirst; \
+		iter != NULL; \
+		iter = iter->pstNext )
 
 #endif // end of header file guard
