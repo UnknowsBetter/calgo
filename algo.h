@@ -8,7 +8,7 @@
 ////////////////////////////////////////////////////
 
 #ifndef _STDIO_H
-#include <stdio.h>
+#error include stdio.h file before include this one
 #endif
 #define dbg_output_file (1)
 #define println(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
@@ -177,8 +177,8 @@ STATIC ULONG rhash_HashInt32(VOID *pBytes, UINT uiLength)
 // hash table
 ////////////////////////////////////////////////////
 
-#ifndef __STDLIB_H
-#include <stdlib.h>
+#ifndef _STDLIB_H
+#error include stdlib.h before include this one
 #endif
 
 typedef ULONG (*HASH_FUNC_PF)(VOID *pKey);
