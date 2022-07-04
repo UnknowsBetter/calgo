@@ -377,12 +377,12 @@ typedef struct tagHQueue
 	HLIST_NODE_T *pstQueueHead;
 }HQUEUE_T;
 
-VOID hqueue_init(HQUEUE_T *pstQueue)
+STATIC VOID hqueue_init(HQUEUE_T *pstQueue)
 {
 	memset(pstQueue, 0, sizeof(HQUEUE_T));
 }
 
-BOOL hqueue_IsEmpty(HQUEUE_T *pstQueue)
+STATIC BOOL hqueue_IsEmpty(HQUEUE_T *pstQueue)
 {
 	return pstQueue->pstQueueHead == NULL;
 }
@@ -390,14 +390,19 @@ BOOL hqueue_IsEmpty(HQUEUE_T *pstQueue)
 #ifndef _STRING_H
 #error include string.h before this one
 #endif
-VOID hqueue_In(HQUEUE_T *pstQueue, HLIST_NODE_T *pstQNode)
+STATIC VOID hqueue_In(HQUEUE_T *pstQueue, HLIST_NODE_T *pstQNode)
 {
 	AssertRuntime(pstQNode != NULL);
 	AssertRuntime(pstQueue != NULL);
 	hlist_AddNode(&pstQueue->stFrame, pstQNode);
+
+	if (pstQueue->pstQueueHead == NULL)
+	{
+		pstQueue->pstQueueHead = pstQNode;
+	}
 }
 
-HLIST_NODE_T * hqueue_Out(HQUEUE_T *pstQueue)
+STATIC HLIST_NODE_T * hqueue_Out(HQUEUE_T *pstQueue)
 {
 	HLIST_NODE_T *pstHead = NULL;
 
@@ -407,6 +412,11 @@ HLIST_NODE_T * hqueue_Out(HQUEUE_T *pstQueue)
 	pstQueue->pstQueueHead = (HLIST_NODE_T*)pstQueue->pstQueueHead->ppstPrevious;
 
 	hlist_RemoveNode(pstHead);
+
+	if (pstQueue->pstQueueHead == &pstQueue->stFrame)
+	{
+		pstQueue->pstQueueHead = NULL;
+	}
 
 	return pstHead;
 }
