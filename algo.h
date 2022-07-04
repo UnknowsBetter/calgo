@@ -312,7 +312,7 @@ STATIC HLIST_NODE_T* hash_RemoveNode(HASH_TABLE_T *pstTable, void *pKey)
 		iter != NULL; \
 		iter = iter->pstNext )
 
-// list stack
+// Stack using list
 ////////////////////////////////////////////////////
 
 typedef struct tagHStack
@@ -342,6 +342,13 @@ STATIC HLIST_NODE_T * hstack_Pop(HSTACK_T *pstStack)
 	return pstNode;
 }
 
+STATIC HLIST_NODE_T * hstack_Peek(HSTACK_T *pstStack)
+{
+	AssertRuntime(pstStack != NULL);
+
+	return pstStack->stFrame.pstFirst;
+}
+
 STATIC VOID hstack_Push(HSTACK_T *pstStack, HLIST_NODE_T* pstNode)
 {
 	AssertRuntime(pstStack != NULL);
@@ -349,6 +356,7 @@ STATIC VOID hstack_Push(HSTACK_T *pstStack, HLIST_NODE_T* pstNode)
 	pstStack->uiSize++;
 	hlist_AddNode(&pstStack->stFrame, pstNode);
 }
+
 
 STATIC UINT hstack_size(HSTACK_T *pstStack)
 {
@@ -358,5 +366,49 @@ STATIC UINT hstack_size(HSTACK_T *pstStack)
 }
 
 #define hstack_Walk(pstStack) hlist_Walk((&pstStack->stFrame))
+
+// Queue using list
+////////////////////////////////////////////////////
+
+typedef struct tagHQueue
+{
+	HLIST_HEAD_T stFrame;
+	UINT	     uiSize;
+	HLIST_NODE_T *pstQueueHead;
+}HQUEUE_T;
+
+VOID hqueue_init(HQUEUE_T *pstQueue)
+{
+	memset(pstQueue, 0, sizeof(HQUEUE_T));
+}
+
+BOOL hqueue_IsEmpty(HQUEUE_T *pstQueue)
+{
+	return pstQueue->pstQueueHead == NULL;
+}
+
+#ifndef _STRING_H
+#error include string.h before this one
+#endif
+VOID hqueue_In(HQUEUE_T *pstQueue, HLIST_NODE_T *pstQNode)
+{
+	AssertRuntime(pstQNode != NULL);
+	AssertRuntime(pstQueue != NULL);
+	hlist_AddNode(&pstQueue->stFrame, pstQNode);
+}
+
+HLIST_NODE_T * hqueue_Out(HQUEUE_T *pstQueue)
+{
+	HLIST_NODE_T *pstHead = NULL;
+
+	AssertRuntime(pstQueue != NULL);
+
+	pstHead = pstQueue->pstQueueHead;
+	pstQueue->pstQueueHead = (HLIST_NODE_T*)pstQueue->pstQueueHead->ppstPrevious;
+
+	hlist_RemoveNode(pstHead);
+
+	return pstHead;
+}
 
 #endif // end of header file guard
