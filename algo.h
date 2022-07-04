@@ -11,6 +11,9 @@
 #include <stdio.h>
 #endif
 #define dbg_output_file (1)
+#define println(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
+
+#ifdef DEBUG
 #define AssertRuntime(expr) 		\
 	do {			\
 		if (!(expr)) {	\
@@ -19,6 +22,9 @@
 			printf("%s", buffer); \
 		}		\
 	} while (0)
+#else
+#define AssertRuntime(expr) 
+#endif
 
 // General macros
 ////////////////////////////////////////////////////
@@ -53,6 +59,7 @@
 #define  ERROR_SUCCESS      0x0
 
 #define STATIC static
+#define INLINE inline
 #define VOID void
 
 #define IN 
@@ -115,19 +122,14 @@ STATIC VOID hlist_RemoveNode(HLIST_NODE_T *pstNode)
 
 STATIC VOID hlist_RemoveAllNode(IN HLIST_HEAD_T *pstHead)
 {
-	HLIST_NODE_T* pstNext = NULL;
-
-	pstNext = pstHead->pstFirst;
-
-	while (pstNext != NULL)
+	while (pstHead->pstFirst != NULL)
 	{
-		hlist_RemoveNode(pstNext);
-		pstNext = pstHead->pstFirst;
+		hlist_RemoveNode(pstHead->pstFirst);
 	}
 }
 
 
-#define rlist_foreach(pstList) \
+#define hlist_Walk(pstList) \
 	TypeCheck(HLIST_HEAD_T *, pstList); \
 	for (\
 		HLIST_NODE_T * iter = pstList->pstFirst;\
@@ -275,7 +277,7 @@ STATIC HLIST_NODE_T* hash_FindNode(HASH_TABLE_T *pstTable, void *pKey)
 	hash_GetBucketIndex(pstTable, pKey, ulIndex);
 
 	pstHead = pstTable->pstBuckets + ulIndex;
-	rlist_foreach(pstHead)
+	hlist_Walk(pstHead)
 	{
 		if (0 == pfCompare(iter, pKey))
 		{
@@ -309,5 +311,52 @@ STATIC HLIST_NODE_T* hash_RemoveNode(HASH_TABLE_T *pstTable, void *pKey)
 	for (HLIST_NODE_T *iter = pstTable->pstBuckets[ulBktIdx].pstFirst; \
 		iter != NULL; \
 		iter = iter->pstNext )
+
+// list stack
+////////////////////////////////////////////////////
+
+typedef struct tagHStack
+{
+	HLIST_HEAD_T stFrame;
+	UINT	     uiSize;
+}HSTACK_T;
+
+INLINE STATIC BOOL hstack_IsEmpty(HSTACK_T *pstStack)
+{
+	AssertRuntime(pstStack != NULL);
+	return (pstStack == NULL) || 
+		   (pstStack->stFrame.pstFirst == NULL);
+}
+
+STATIC HLIST_NODE_T * hstack_Pop(HSTACK_T *pstStack)
+{
+	HLIST_NODE_T *pstNode = NULL;
+
+	AssertRuntime(pstStack != NULL);
+
+	if (TRUE != hstack_IsEmpty(pstStack)) {
+		pstNode = pstStack->stFrame.pstFirst;
+		hlist_RemoveNode(pstNode);
+	}
+
+	return pstNode;
+}
+
+STATIC VOID hstack_Push(HSTACK_T *pstStack, HLIST_NODE_T* pstNode)
+{
+	AssertRuntime(pstStack != NULL);
+	AssertRuntime(pstNode != NULL);
+	pstStack->uiSize++;
+	hlist_AddNode(&pstStack->stFrame, pstNode);
+}
+
+STATIC UINT hstack_size(HSTACK_T *pstStack)
+{
+	AssertRuntime(pstStack != NULL);
+
+	return pstStack->uiSize;
+}
+
+#define hstack_Walk(pstStack) hlist_Walk((&pstStack->stFrame))
 
 #endif // end of header file guard

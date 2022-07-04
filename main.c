@@ -7,7 +7,12 @@
 typedef struct tagInteger
 {
 	UINT uiValue;
+
+	/* never use a single node to add this structure node 
+	   to multiple containers. */
 	HLIST_NODE_T stListNode;
+	HLIST_NODE_T stStackNode;
+
 } UINTEGER_T;
 
 #define SIZEOF_UINTEGER_T sizeof(UINTEGER_T)
@@ -50,9 +55,12 @@ int main(int argc, char* argv[])
 {
 
 	HASH_TABLE_T stHashTable;
+	HSTACK_T	 stStack;
 	UINTEGER_T    astIntegers[200];
 	UINT uiKey = 0;
 	UINT uiCounter = 1;
+
+	memset(&stStack, 0, sizeof(HSTACK_T));
 
 	hash_InitTable(&stHashTable, hash_HashIntegerT, hash_CompareIntegerT, 20);
 
@@ -60,9 +68,9 @@ int main(int argc, char* argv[])
 	{
 		astIntegers[i].uiValue = i;
 		hash_AddNode(&stHashTable, &astIntegers[i].uiValue, &astIntegers[i].stListNode);	
+		hstack_Push (&stStack, &astIntegers[i].stStackNode);
 	}
 	
-
 	hash_Walk((&stHashTable))
 	{
 		UINTEGER_T* pstIteger = UINTEGER_T_CONTAINEROF(iter);
@@ -71,7 +79,27 @@ int main(int argc, char* argv[])
 			   (uiCounter++%4 == 0) ? "\n" : ",    \t");
 	}
 
+	printf("Stack size: %u\n ", stStack.uiSize);
+	hstack_Walk((&stStack))
+	{
+		UINTEGER_T* pstIteger = ContainerOf(iter, UINTEGER_T, stStackNode);
+		printf("%u,", pstIteger->uiValue);
+	}
+
+
+	HLIST_NODE_T *pstStackNode = NULL;
+
+	pstStackNode = hstack_Pop(&stStack);
+	while (pstStackNode != NULL)
+	{
+		UINTEGER_T* pstIteger = ContainerOf(pstStackNode, UINTEGER_T, stStackNode);
+		printf("%u, \n", pstIteger->uiValue);
+
+		pstStackNode = hstack_Pop(&stStack);
+	}
+
 	hash_FiniTable(&stHashTable);
+
 	return 0;
 }
 
@@ -127,7 +155,7 @@ void test_rlist()
 
 	AssertRuntime(stList.pstFirst == NULL);
 
-	rlist_foreach((&stList))
+	hlist_Walk((&stList))
  	{
  		printf("iter: %p, next: %p, pprev: %p, *pprev: %p\n",
 			   iter,
